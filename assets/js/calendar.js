@@ -3,7 +3,13 @@ console.log("Calendar script carregado");
 
 import { db, auth } from "./firebase.js";
 import {
-  collection, doc, setDoc, deleteDoc, onSnapshot, query, where
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  where,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 let currentMonth = new Date();
@@ -19,6 +25,13 @@ const titleInput = document.getElementById("event-title");
 const timeInput = document.getElementById("event-time");
 const typeInput = document.getElementById("event-type");
 const notesInput = document.getElementById("event-notes");
+const statusMsg = document.getElementById("event-status");
+
+const btnSave = document.getElementById("save-event");
+const btnDelete = document.getElementById("delete-event");
+const btnClose = document.getElementById("close-modal");
+const btnPrev = document.getElementById("prev-month");
+const btnNext = document.getElementById("next-month");
 
 let selectedDateStr = null;
 let unsubscribeDay = null;
@@ -61,49 +74,89 @@ function renderCalendar(date) {
   // Dias
   for (let d = 1; d <= lastDay.getDate(); d++) {
     const cell = document.createElement("button");
-    cell.className = "h-20 rounded-lg border border-green-100 bg-white hover:bg-green-50 flex flex-col items-center justify-center";
+    cell.className =
+      "h-20 rounded-lg border border-green-100 bg-white hover:bg-green-50 flex flex-col items-center justify-center";
     cell.innerHTML = `<span class="text-gray-700">${d}</span><span class="text-xs text-gray-400">Clique</span>`;
-    cell.addEventListener("click", () => openDayModal(date.getFullYear(), date.getMonth(), d));
+    cell.addEventListener("click", () =>
+      openDayModal(date.getFullYear(), date.getMonth(), d)
+    );
     grid.appendChild(cell);
   }
 }
 
 function openDayModal(year, month, day) {
-  selectedDateStr = `${year}-${String(month + 1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-  modalDateLabel.textContent = new Date(year, month, day).toLocaleDateString("pt-BR");
+  selectedDateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+    day
+  ).padStart(2, "0")}`;
+  modalDateLabel.textContent = new Date(year, month, day).toLocaleDateString(
+    "pt-BR"
+  );
+
+  // Reset form
   eventIdInput.value = "";
   titleInput.value = "";
   timeInput.value = "";
   typeInput.value = "Espiritual";
   notesInput.value = "";
+  setStatus("");
 
   // Assinar eventos do dia
   if (unsubscribeDay) unsubscribeDay();
   const q = query(collection(db, "events"), where("date", "==", selectedDateStr));
-  unsubscribeDay = onSnapshot(q, (snap) => {
-    eventList.innerHTML = "";
-    snap.forEach((docSnap) => {
-      const item = document.createElement("li");
-      const data = docSnap.data();
-      item.className = "p-3 rounded-lg border border-green-100";
-      item.innerHTML = `
-        <div class="flex justify-between">
-          <div>
-            <p class="text-gray-800 font-medium">${data.title || "(Sem título)"}</p>
-            <p class="text-sm text-gray-500">${data.time || "--:--"} • ${data.type || "—"}</p>
-            <p class="text-sm text-gray-600 mt-1">${data.notes || ""}</p>
+  unsubscribeDay = onSnapshot(
+    q,
+    (snap) => {
+      eventList.innerHTML = "";
+      snap.forEach((docSnap) => {
+        const data = docSnap.data();
+        const item = document.createElement("li");
+        item.className = "p-3 rounded-lg border border-green-100";
+        item.innerHTML = `
+          <div class="flex justify-between gap-4">
+            <div class="min-w-0">
+              <p class="text-gray-800 font-medium truncate">${data.title || "(Sem título)"}</p>
+              <p class="text-sm text-gray-500">${data.time || "--:--"} • ${data.type || "—"}</p>
+              <p class="text-sm text-gray-600 mt-1 break-words">${data.notes || ""}</p>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+              <button data-id="${docSnap.id}" class="text-sm text-red-600 hover:underline">Excluir</button>
+              <button data-id="${docSnap.id}" class="text-sm text-green-600 hover:underline">Editar</button>
+            </div>
           </div>
-          <button data-id="${docSnap.id}" class="text-sm text-red-600 hover:underline">Excluir</button>
-        </div>
-      `;
-      item.querySelector("button").addEventListener("click", async (e) => {
-        const id = e.currentTarget.getAttribute("data-id");
-        await deleteDoc(doc(db, "events", id));
-      });
-      eventList.appendChild(item);
-    });
-  });
+        `;
 
+        // Excluir
+        item.querySelector('button.text-red-600').addEventListener("click", async (e) => {
+          const id = e.currentTarget.getAttribute("data-id");
+          try {
+            await deleteDoc(doc(db, "events", id));
+            setStatus("🗑️ Evento excluído!");
+          } catch (err) {
+            console.error(err);
+            setStatus("Erro ao excluir o evento.");
+          }
+        });
+
+        // Editar: carrega dados no formulário
+        item.querySelector('button.text-green-600').addEventListener("click", () => {
+          eventIdInput.value = data.id || docSnap.id;
+          titleInput.value = data.title || "";
+          timeInput.value = data.time || "";
+          typeInput.value = data.type || "Espiritual";
+          notesInput.value = data.notes || "";
+          setStatus("Editando evento...");
+        });
+
+        eventList.appendChild(item);
+      });
+    },
+    (err) => {
+      console.error(err);
+      setStatus("Erro ao carregar eventos do dia.");
+    }
+  );
+
+  // Abrir modal
   modal.classList.remove("hidden");
   modal.classList.add("flex");
 }
@@ -111,53 +164,100 @@ function openDayModal(year, month, day) {
 function closeModal() {
   modal.classList.add("hidden");
   modal.classList.remove("flex");
+  selectedDateStr = null;
+  if (unsubscribeDay) {
+    unsubscribeDay();
+    unsubscribeDay = null;
+  }
+  setStatus("");
 }
 
-document.getElementById("close-modal").addEventListener("click", closeModal);
+function setStatus(message) {
+  if (!statusMsg) return;
+  statusMsg.textContent = message || "";
+  if (message) {
+    // limpa após alguns segundos
+    clearTimeout(setStatus._t);
+    setStatus._t = setTimeout(() => {
+      statusMsg.textContent = "";
+    }, 3000);
+  }
+}
 
-document.getElementById("save-event").addEventListener("click", async (e) => {
+// Eventos UI
+btnClose?.addEventListener("click", closeModal);
+
+btnSave?.addEventListener("click", async (e) => {
   e.preventDefault();
-  if (!selectedDateStr) return;
+  if (!selectedDateStr) {
+    setStatus("Selecione um dia no calendário.");
+    return;
+  }
+  if (!titleInput.value.trim()) {
+    setStatus("Título é obrigatório.");
+    return;
+  }
 
   const id = eventIdInput.value || crypto.randomUUID();
-  await setDoc(doc(db, "events", id), {
+  const payload = {
     id,
     date: selectedDateStr,
-    title: titleInput.value,
-    time: timeInput.value,
-    type: typeInput.value,
-    notes: notesInput.value,
-    createdBy: auth.currentUser?.uid || "unknown",
+    title: titleInput.value.trim(),
+    time: timeInput.value || "",
+    type: typeInput.value || "Espiritual",
+    notes: notesInput.value || "",
+    createdBy: auth.currentUser?.uid || "anonymous",
     createdAt: Date.now(),
-  });
+  };
 
-  // Limpa form após salvar
-  eventIdInput.value = "";
-  titleInput.value = "";
-  timeInput.value = "";
-  notesInput.value = "";
-});
+  try {
+    // Evita recarregamento por submissão de form
+    await setDoc(doc(db, "events", id), payload);
+    setStatus("✅ Evento salvo com sucesso!");
 
-document.getElementById("delete-event").addEventListener("click", async (e) => {
-  e.preventDefault();
-  const id = eventIdInput.value;
-  if (id) {
-    await deleteDoc(doc(db, "events", id));
+    // Limpa form após salvar
     eventIdInput.value = "";
     titleInput.value = "";
     timeInput.value = "";
     typeInput.value = "Espiritual";
     notesInput.value = "";
+  } catch (err) {
+  console.error("Erro ao salvar:", err.code, err.message);
+  setStatus(`Erro ao salvar evento: ${err.code || ""} ${err.message || ""}`);
   }
 });
 
-document.getElementById("prev-month").addEventListener("click", () => {
+btnDelete?.addEventListener("click", async (e) => {
+  e.preventDefault();
+  const id = eventIdInput.value;
+  if (!id) {
+    setStatus("Selecione um evento para excluir (clique em Editar).");
+    return;
+  }
+  try {
+    await deleteDoc(doc(db, "events", id));
+    setStatus("🗑️ Evento excluído!");
+    eventIdInput.value = "";
+    titleInput.value = "";
+    timeInput.value = "";
+    typeInput.value = "Espiritual";
+    notesInput.value = "";
+  } catch (err) {
+    console.error(err);
+    setStatus("Erro ao excluir evento.");
+  }
+});
+
+btnPrev?.addEventListener("click", () => {
   currentMonth.setMonth(currentMonth.getMonth() - 1);
   renderCalendar(currentMonth);
 });
-document.getElementById("next-month").addEventListener("click", () => {
+
+btnNext?.addEventListener("click", () => {
   currentMonth.setMonth(currentMonth.getMonth() + 1);
   renderCalendar(currentMonth);
 });
 
-document.addEventListener("DOMContentLoaded", () => renderCalendar(currentMonth));
+document.addEventListener("DOMContentLoaded", () => {
+  renderCalendar(currentMonth);
+});

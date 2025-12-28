@@ -26,9 +26,9 @@
       <div class="flex items-center justify-between mb-4">
         <h1 class="text-2xl font-semibold text-green-700">Calendário</h1>
         <div class="space-x-2">
-          <button id="prev-month" class="px-3 py-2 rounded-lg border border-green-200 hover:bg-green-50">←</button>
+          <button id="prev-month" type="button" class="px-3 py-2 rounded-lg border border-green-200 hover:bg-green-50">←</button>
           <span id="current-month" class="text-green-700 font-medium"></span>
-          <button id="next-month" class="px-3 py-2 rounded-lg border border-green-200 hover:bg-green-50">→</button>
+          <button id="next-month" type="button" class="px-3 py-2 rounded-lg border border-green-200 hover:bg-green-50">→</button>
         </div>
       </div>
 
@@ -41,7 +41,7 @@
         <div class="bg-white w-full max-w-lg rounded-xl p-6 shadow-lg">
           <div class="flex justify-between items-center mb-4">
             <h2 id="modal-date" class="text-xl font-semibold text-green-700"></h2>
-            <button id="close-modal" class="text-gray-500 hover:text-gray-700">✕</button>
+            <button id="close-modal" type="button" class="text-gray-500 hover:text-gray-700">✕</button>
           </div>
 
           <form id="event-form" class="space-y-3">
@@ -71,9 +71,12 @@
             </div>
 
             <div class="flex justify-between">
-              <button id="save-event" class="px-4 py-2 rounded-lg bg-gradient-to-r from-green-400 to-green-600 text-white">Salvar</button>
-              <button id="delete-event" class="px-4 py-2 rounded-lg border border-red-300 text-red-600">Excluir</button>
+              <button id="save-event" type="button" class="px-4 py-2 rounded-lg bg-gradient-to-r from-green-400 to-green-600 text-white">Salvar</button>
+              <button id="delete-event" type="button" class="px-4 py-2 rounded-lg border border-red-300 text-red-600">Excluir</button>
             </div>
+
+            <!-- Mensagem de status -->
+            <p id="event-status" class="mt-2 text-sm text-gray-600"></p>
           </form>
 
           <div class="mt-6">
