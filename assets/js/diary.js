@@ -13,10 +13,7 @@ const statusYas = document.getElementById("status-yasmin");
 let currentKey = null;
 let unsubscribe = null;
 
-function getDateKey(date) {
-  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
-}
-
+// Liga o listener em tempo real para uma chave yyyy-mm-dd
 function bindRealtime(dayKey) {
   if (unsubscribe) unsubscribe();
   const docRef = doc(db, "diary", dayKey);
@@ -53,17 +50,23 @@ saveYas.addEventListener("click", async () => {
   setTimeout(() => (statusYas.textContent = ""), 2000);
 });
 
-// Inicializa com o dia atual
+// Inicializa com o dia atual (string local yyyy-mm-dd, sem UTC)
 document.addEventListener("DOMContentLoaded", () => {
   const today = new Date();
-  dateInput.value = today.toISOString().split("T")[0]; // formato yyyy-mm-dd
-  currentKey = getDateKey(today);
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+
+  dateInput.value = todayStr;     // valor exibido no input
+  currentKey = todayStr;          // chave do documento exatamente igual ao valor do input
   bindRealtime(currentKey);
 });
 
-// Quando o usuário troca a data
+// Quando o usuário troca a data (usa o valor literal do input)
 dateInput.addEventListener("change", () => {
-  const chosenDate = new Date(dateInput.value);
-  currentKey = getDateKey(chosenDate);
+  const value = dateInput.value; // "yyyy-mm-dd"
+  if (!value) return;
+  currentKey = value;
   bindRealtime(currentKey);
 });
