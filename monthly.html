@@ -33,6 +33,7 @@
               <a href="calendar.html" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-green-200 hover:text-green-900">Calendário</a>
               <a href="diary.html" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-green-200 hover:text-green-900">Diário</a>
               <a href="monthly.html" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-green-200 hover:text-green-900">Resumo Mensal</a>
+              <a href="favorites.html" class="rounded-md px-3 py-2 text-sm font-medium text-white hover:bg-green-200 hover:text-green-900">Favoritos</a>
             </div>
           </div>
         </div>
@@ -45,22 +46,12 @@
       <a href="calendar.html" class="block rounded-md px-3 py-2 text-base font-medium text-white hover:bg-green-200 hover:text-green-900">Calendário</a>
       <a href="diary.html" class="block rounded-md px-3 py-2 text-base font-medium text-white hover:bg-green-200 hover:text-green-900">Diário</a>
       <a href="monthly.html" class="block rounded-md px-3 py-2 text-base font-medium text-white hover:bg-green-200 hover:text-green-900">Resumo Mensal</a>
+      <a href="favorites.html" class="block rounded-md px-3 py-2 text-base font-medium text-white hover:bg-green-200 hover:text-green-900">Favoritos</a>    
       <button id="logout-btn-mobile" class="w-20 py-1 rounded-lg bg-green-600 text-white hover:bg-green-200 hover:text-green-900">SAIR</button>
     </div>
   </nav>
 
-  <script>
-    const menuBtn = document.getElementById('menu-btn');
-    const mobileMenu = document.getElementById('mobile-menu');
-    const iconOpen = document.getElementById('icon-open');
-    const iconClose = document.getElementById('icon-close');
-
-    menuBtn.addEventListener('click', () => {
-      mobileMenu.classList.toggle('hidden');
-      iconOpen.classList.toggle('hidden');
-      iconClose.classList.toggle('hidden');
-    });
-  </script>
+  
   <div class="flex min-h-screen ">
     <main class="flex-1 bg-gradient-to-b from-white to-green-50 p-6">
       <div class="flex items-center justify-between mb-4 ">
@@ -102,6 +93,7 @@
     </main>
   </div>
 
+  <script src="./assets/js/navBar.js"></script>
   <script type="module" src="./assets/js/firebase.js"></script>
   <script type="module" src="./assets/js/auth.js"></script>
   <script type="module" src="./assets/js/monthly.js"></script>

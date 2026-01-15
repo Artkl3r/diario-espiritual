@@ -9,11 +9,12 @@ const saveArthur = document.getElementById("save-arthur");
 const saveYas = document.getElementById("save-yasmin");
 const statusArthur = document.getElementById("status-arthur");
 const statusYas = document.getElementById("status-yasmin");
+const favArthur = document.getElementById("fav-arthur");
+const favYas = document.getElementById("fav-yasmin");
 
 let currentKey = null;
 let unsubscribe = null;
 
-// Liga o listener em tempo real para uma chave yyyy-mm-dd
 function bindRealtime(dayKey) {
   if (unsubscribe) unsubscribe();
   const docRef = doc(db, "diary", dayKey);
@@ -38,6 +39,32 @@ async function saveEntry(role) {
   await setDoc(docRef, payload, { merge: true });
 }
 
+// Favoritos (localStorage) com verificação de duplicados
+function addFavorite(author, text) {
+  if (!text.trim()) return;
+  const favoritos = JSON.parse(localStorage.getItem("favoritos")) || [];
+
+  const exists = favoritos.some(fav =>
+    fav.author === author && fav.date === currentKey && fav.text === text
+  );
+  if (exists) {
+    alert("Essa reflexão já está nos favoritos!");
+    return;
+  }
+
+  favoritos.push({ author, text, date: currentKey });
+  localStorage.setItem("favoritos", JSON.stringify(favoritos));
+  alert("Reflexão adicionada aos favoritos!");
+}
+
+favArthur.addEventListener("click", () => {
+  addFavorite("Arthur", arthurText.value);
+});
+
+favYas.addEventListener("click", () => {
+  addFavorite("Yasmin", yasText.value);
+});
+
 // Eventos de salvar
 saveArthur.addEventListener("click", async () => {
   await saveEntry("arthur");
@@ -50,7 +77,7 @@ saveYas.addEventListener("click", async () => {
   setTimeout(() => (statusYas.textContent = ""), 2000);
 });
 
-// Inicializa com o dia atual (string local yyyy-mm-dd, sem UTC)
+// Inicializa com o dia atual
 document.addEventListener("DOMContentLoaded", () => {
   const today = new Date();
   const yyyy = today.getFullYear();
@@ -58,14 +85,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const dd = String(today.getDate()).padStart(2, "0");
   const todayStr = `${yyyy}-${mm}-${dd}`;
 
-  dateInput.value = todayStr;     // valor exibido no input
-  currentKey = todayStr;          // chave do documento exatamente igual ao valor do input
+  dateInput.value = todayStr;
+  currentKey = todayStr;
   bindRealtime(currentKey);
 });
 
-// Quando o usuário troca a data (usa o valor literal do input)
 dateInput.addEventListener("change", () => {
-  const value = dateInput.value; // "yyyy-mm-dd"
+  const value = dateInput.value;
   if (!value) return;
   currentKey = value;
   bindRealtime(currentKey);
